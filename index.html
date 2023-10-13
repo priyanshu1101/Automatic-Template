@@ -188,17 +188,20 @@
             var inputFieldsDiv = document.getElementById('inputFields');
             inputFieldsDiv.innerHTML = '';
             var inputFieldNames = selectedTemplateMessage.match(/\[.*?\]/g) || [];
-            inputFieldNames.forEach(function (fieldName) {
+            var uniqueInputFieldNames = [...new Set(inputFieldNames)]; // Get unique input field names
+
+            uniqueInputFieldNames.forEach(function (fieldName) {
                 fieldName = fieldName.replace(/\[|\]/g, ''); // Remove square brackets
                 var inputField = document.createElement('div');
                 inputField.className = 'input-field';
                 inputField.innerHTML = `
-                    <label for="${fieldName}">${fieldName}:</label>
-                    <input type="text" id="${fieldName}">
-                `;
+            <label for="${fieldName}">${fieldName}:</label>
+            <input type="text" id="${fieldName}">
+        `;
                 inputFieldsDiv.appendChild(inputField);
             });
         }
+
 
         function generateTemplate() {
             var selectedTemplateIndex = document.getElementById('templateSelect').value;
