@@ -9,12 +9,10 @@
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-            margin: 0;
+            margin: 20px;
             padding: 0;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
         }
 
         .container {
@@ -94,6 +92,17 @@
         button:hover {
             background-color: #45a049;
         }
+
+        .copy-feedback {
+            background-color: #4CAF50;
+            color: white;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 
@@ -115,20 +124,16 @@
         </div>
         <div class="right-panel">
             <div class="input-field">
-                <label for="name">Your Name:</label>
-                <input type="text" id="name">
+                <label for="templateSelect">Choose a Template:</label>
+                <select id="templateSelect" onchange="updateInputFields()"></select>
             </div>
-            <div class="input-field">
-                <label for="company">Company Name:</label>
-                <input type="text" id="company">
-            </div>
-            <h2>Choose a Template:</h2>
-            <select id="templateSelect"></select>
+            <div id="inputFields"></div>
             <button onclick="generateTemplate()">Generate Template</button>
             <div class="output-box" id="output"></div>
             <button onclick="copyToClipboard()">Copy to Clipboard</button>
         </div>
     </div>
+    <div class="copy-feedback" id="copyFeedback">Copied!</div>
 
     <script>
         function saveTemplate() {
@@ -174,21 +179,45 @@
                 option.textContent = template.name;
                 templateSelect.appendChild(option);
             });
+            updateInputFields();
+        }
+
+        function updateInputFields() {
+            var selectedTemplateIndex = document.getElementById('templateSelect').value;
+            var selectedTemplateMessage = JSON.parse(localStorage.getItem('templates'))[selectedTemplateIndex].message;
+            var inputFieldsDiv = document.getElementById('inputFields');
+            inputFieldsDiv.innerHTML = '';
+            var inputFieldNames = selectedTemplateMessage.match(/\[.*?\]/g) || [];
+            inputFieldNames.forEach(function (fieldName) {
+                fieldName = fieldName.replace(/\[|\]/g, ''); // Remove square brackets
+                var inputField = document.createElement('div');
+                inputField.className = 'input-field';
+                inputField.innerHTML = `
+                    <label for="${fieldName}">${fieldName}:</label>
+                    <input type="text" id="${fieldName}">
+                `;
+                inputFieldsDiv.appendChild(inputField);
+            });
         }
 
         function generateTemplate() {
             var selectedTemplateIndex = document.getElementById('templateSelect').value;
-            var selectedTemplateName = document.getElementById('templateSelect').options[selectedTemplateIndex].text;
             var selectedTemplateMessage = JSON.parse(localStorage.getItem('templates'))[selectedTemplateIndex].message;
-            var name = document.getElementById('name').value;
-            var company = document.getElementById('company').value;
+            var inputFieldNames = selectedTemplateMessage.match(/\[.*?\]/g) || [];
+            var inputValues = {};
+            inputFieldNames.forEach(function (fieldName) {
+                fieldName = fieldName.replace(/\[|\]/g, ''); // Remove square brackets
+                inputValues[fieldName] = document.getElementById(fieldName).value;
+            });
 
-            if (name && company) {
-                var generatedTemplate = selectedTemplateMessage.replace('[Name]', name).replace('[Company Name]', company);
-                document.getElementById('output').textContent = generatedTemplate;
-            } else {
-                alert("Please fill out all fields.");
-            }
+            var generatedTemplate = selectedTemplateMessage;
+            inputFieldNames.forEach(function (fieldName) {
+                fieldName = fieldName.replace(/\[|\]/g, ''); // Remove square brackets
+                var regex = new RegExp('\\[' + fieldName + '\\]', 'g');
+                generatedTemplate = generatedTemplate.replace(regex, inputValues[fieldName]);
+            });
+
+            document.getElementById('output').textContent = generatedTemplate;
         }
 
         function copyToClipboard() {
@@ -199,7 +228,12 @@
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            alert('Email copied to clipboard!');
+
+            var copyFeedback = document.getElementById('copyFeedback');
+            copyFeedback.style.display = 'block';
+            setTimeout(function () {
+                copyFeedback.style.display = 'none';
+            }, 1500); // Display "Copied!" message for 1.5 seconds
         }
 
         window.onload = function () {
