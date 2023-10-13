@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1000px;
+            overflow: hidden;
+        }
+
+        .left-panel,
+        .right-panel {
+            padding: 40px;
+        }
+
+        .left-panel {
+            width: 40%;
+        }
+
+        .right-panel {
+            width: 60%;
+        }
+
+        .input-field {
+            margin-bottom: 20px;
+        }
+
+        .template-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .template-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .delete-button {
+            background-color: #ff5858;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-button:hover {
+            background-color: #ff0000;
+        }
+
+        .output-box {
+            font-family: monospace;
+            white-space: pre-wrap;
+            text-align: left;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1>Template Generator</h1>
+            <div class="input-field">
+                <label for="templateName">Template Name:</label>
+                <input type="text" id="templateName">
+            </div>
+            <div class="input-field">
+                <label for="templateMessage">Template Message:</label>
+                <textarea id="templateMessage" rows="4"></textarea>
+            </div>
+            <button onclick="saveTemplate()">Save Template</button>
+            <h2>Templates:</h2>
+            <ul class="template-list" id="templateList"></ul>
+        </div>
+        <div class="right-panel">
+            <div class="input-field">
+                <label for="name">Your Name:</label>
+                <input type="text" id="name">
+            </div>
+            <div class="input-field">
+                <label for="company">Company Name:</label>
+                <input type="text" id="company">
+            </div>
+            <h2>Choose a Template:</h2>
+            <select id="templateSelect"></select>
+            <button onclick="generateTemplate()">Generate Template</button>
+            <div class="output-box" id="output"></div>
+            <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        function saveTemplate() {
+            var templateName = document.getElementById('templateName').value;
+            var templateMessage = document.getElementById('templateMessage').value;
+            var templates = JSON.parse(localStorage.getItem('templates')) || [];
+            templates.push({
+                name: templateName,
+                message: templateMessage
+            });
+            localStorage.setItem('templates', JSON.stringify(templates));
+            updateTemplateList(templates);
+        }
+
+        function updateTemplateList(templates) {
+            var templateList = document.getElementById('templateList');
+            templateList.innerHTML = '';
+            templates.forEach(function (template, index) {
+                var listItem = document.createElement('li');
+                listItem.className = 'template-list-item';
+                listItem.innerHTML = `
+                    <span>${template.name}</span>
+                    <button class="delete-button" onclick="deleteTemplate(${index})">Delete</button>
+                `;
+                templateList.appendChild(listItem);
+            });
+            updateTemplateSelect(templates);
+        }
+
+        function deleteTemplate(index) {
+            var templates = JSON.parse(localStorage.getItem('templates')) || [];
+            templates.splice(index, 1);
+            localStorage.setItem('templates', JSON.stringify(templates));
+            updateTemplateList(templates);
+        }
+
+        function updateTemplateSelect(templates) {
+            var templateSelect = document.getElementById('templateSelect');
+            templateSelect.innerHTML = '';
+            templates.forEach(function (template, index) {
+                var option = document.createElement('option');
+                option.value = index;
+                option.textContent = template.name;
+                templateSelect.appendChild(option);
+            });
+        }
+
+        function generateTemplate() {
+            var selectedTemplateIndex = document.getElementById('templateSelect').value;
+            var selectedTemplateName = document.getElementById('templateSelect').options[selectedTemplateIndex].text;
+            var selectedTemplateMessage = JSON.parse(localStorage.getItem('templates'))[selectedTemplateIndex].message;
+            var name = document.getElementById('name').value;
+            var company = document.getElementById('company').value;
+
+            if (name && company) {
+                var generatedTemplate = selectedTemplateMessage.replace('[Name]', name).replace('[Company Name]', company);
+                document.getElementById('output').textContent = generatedTemplate;
+            } else {
+                alert("Please fill out all fields.");
+            }
+        }
+
+        function copyToClipboard() {
+            var outputText = document.getElementById('output');
+            var textArea = document.createElement('textarea');
+            textArea.value = outputText.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Email copied to clipboard!');
+        }
+
+        window.onload = function () {
+            var templates = JSON.parse(localStorage.getItem('templates')) || [];
+            updateTemplateList(templates);
+        };
+    </script>
+</body>
+
+</html>
